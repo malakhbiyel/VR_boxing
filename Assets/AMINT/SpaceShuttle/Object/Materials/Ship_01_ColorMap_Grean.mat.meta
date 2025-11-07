@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 15157d0978134764bbf273b7ed1a67df
+timeCreated: 1429361825
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 34972
+  packageName: Space Shuttle
+  packageVersion: v 1.0
+  assetPath: Assets/AMINT/SpaceShuttle/Object/Materials/Ship_01_ColorMap_Grean.mat
+  uploadId: 743233

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d1b6739508cfcf84abdf9c9e0b1c18f2
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178481
+  packageName: Shield,Sword,Spear
+  packageVersion: 1.0
+  assetPath: Assets/Weapon/Prefab/Shield.prefab
+  uploadId: 388830
