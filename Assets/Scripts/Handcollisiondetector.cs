@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.XR;
 
 public class HandCollisionDetector : MonoBehaviour
 {
@@ -6,17 +7,39 @@ public class HandCollisionDetector : MonoBehaviour
     [Tooltip("Est-ce que c'est la main gauche?")]
     public bool isLeftHand = false;
     
+    [Header("Haptic Feedback")]
+    [Tooltip("Activer les vibrations")]
+    public bool enableHaptics = true;
+    
+    [Tooltip("Intensité de la vibration pour les cibles (0-1)")]
+    [Range(0f, 1f)]
+    public float targetHapticIntensity = 0.5f;
+    
+    [Tooltip("Durée de la vibration pour les cibles (secondes)")]
+    public float targetHapticDuration = 0.1f;
+    
+    [Tooltip("Intensité de la vibration pour les obstacles (0-1)")]
+    [Range(0f, 1f)]
+    public float obstacleHapticIntensity = 0.8f;
+    
+    [Tooltip("Durée de la vibration pour les obstacles (secondes)")]
+    public float obstacleHapticDuration = 0.2f;
+    
     [Header("Debug")]
     public bool showDebugLogs = true;
     
     private PunchDetector punchDetector;
     private GameManager gameManager;
+    private InputDevice targetDevice;
     
     void Start()
     {
         // Récupérer les composants nécessaires
         punchDetector = GetComponent<PunchDetector>();
         gameManager = FindFirstObjectByType<GameManager>();
+        
+        // Initialiser le device XR pour les vibrations
+        InitializeXRDevice();
         
         if (punchDetector == null)
         {
@@ -36,6 +59,35 @@ public class HandCollisionDetector : MonoBehaviour
         
         string handSide = isLeftHand ? "GAUCHE" : "DROITE";
         Debug.Log($"✅ Main {handSide} configurée - Ready to detect collisions!");
+    }
+    
+    void InitializeXRDevice()
+    {
+        // Récupérer le bon contrôleur (gauche ou droit)
+        InputDeviceCharacteristics characteristics = InputDeviceCharacteristics.Controller | InputDeviceCharacteristics.HeldInHand;
+        
+        if (isLeftHand)
+        {
+            characteristics |= InputDeviceCharacteristics.Left;
+        }
+        else
+        {
+            characteristics |= InputDeviceCharacteristics.Right;
+        }
+        
+        var devices = new System.Collections.Generic.List<InputDevice>();
+        InputDevices.GetDevicesWithCharacteristics(characteristics, devices);
+        
+        if (devices.Count > 0)
+        {
+            targetDevice = devices[0];
+            string handSide = isLeftHand ? "GAUCHE" : "DROITE";
+            Debug.Log($"🎮 Contrôleur {handSide} trouvé: {targetDevice.name}");
+        }
+        else
+        {
+            Debug.LogWarning($"⚠️ Contrôleur {(isLeftHand ? "gauche" : "droit")} non trouvé");
+        }
     }
     
     void OnTriggerEnter(Collider other)
@@ -70,6 +122,14 @@ public class HandCollisionDetector : MonoBehaviour
         
         string handSide = isLeftHand ? "GAUCHE" : "DROITE";
         
+        // ===== LOG DÉTAILLÉ =====
+        Debug.Log("╔════════════════════════════════════╗");
+        Debug.Log($"║ CIBLE TOUCHÉE - Main {handSide}");
+        Debug.Log($"║ Vitesse du coup: {punchSpeed:F2} m/s");
+        Debug.Log($"║ Vitesse minimum: {minSpeed:F2} m/s");
+        Debug.Log($"║ Valide? {(punchSpeed >= minSpeed ? "✅ OUI" : "❌ NON")}");
+        Debug.Log("╚════════════════════════════════════╝");
+        
         if (punchSpeed >= minSpeed)
         {
             // Coup valide!
@@ -85,8 +145,20 @@ public class HandCollisionDetector : MonoBehaviour
                 Debug.Log($"🎯 TARGET HIT! Main {handSide} | Vitesse: {punchSpeed:F2} m/s | Points: +{points}");
             }
             
+            // ===== TEST VIBRATION =====
+            Debug.Log("████████████████████████████████████");
+            Debug.Log($"📳📳📳 APPEL DE VIBRATION! Main {handSide}");
+            Debug.Log("████████████████████████████████████");
+            
+            // Effet haptique (vibration)
+            TriggerHapticFeedback(targetHapticIntensity, targetHapticDuration);
+            
+            Debug.Log("████████████████████████████████████");
+            Debug.Log("📳 VIBRATION ENVOYÉE (normalement)");
+            Debug.Log("████████████████████████████████████");
+            
             // Effet visuel/sonore ici si nécessaire
-            // TODO: Ajouter particules, son, vibration
+            // TODO: Ajouter particules, son
         }
         else
         {
@@ -128,8 +200,11 @@ public class HandCollisionDetector : MonoBehaviour
             Debug.Log($"❌ OBSTACLE TOUCHÉ! Main {handSide} | Tu aurais dû te baisser! | Pénalité: {penalty} points");
         }
         
+        // Effet haptique plus fort pour les obstacles
+        TriggerHapticFeedback(obstacleHapticIntensity, obstacleHapticDuration);
+        
         // Effet visuel/sonore négatif ici
-        // TODO: Ajouter effet rouge, son d'erreur, vibration forte
+        // TODO: Ajouter effet rouge, son d'erreur
         
         // Détruire l'obstacle
         Destroy(projectile.gameObject);
@@ -148,6 +223,71 @@ public class HandCollisionDetector : MonoBehaviour
             return 10;  // Coup normal
         else
             return 5;   // Coup faible mais valide
+    }
+    
+    /// <summary>
+    /// Déclenche une vibration haptique sur le contrôleur
+    /// </summary>
+    void TriggerHapticFeedback(float intensity, float duration)
+    {
+        if (!enableHaptics) return;
+        
+        string handSide = isLeftHand ? "GAUCHE" : "DROITE";
+        bool vibrationSent = false;
+        
+        // Méthode 1: InputDevice (OpenXR standard)
+        if (targetDevice.isValid)
+        {
+            bool success = targetDevice.SendHapticImpulse(0, intensity, duration);
+            if (success)
+            {
+                vibrationSent = true;
+                Debug.Log($"📳 [OpenXR] Vibration {handSide}: {intensity:F2} / {duration:F2}s");
+            }
+            else
+            {
+                Debug.LogWarning($"⚠️ Échec SendHapticImpulse pour {handSide}");
+            }
+        }
+        
+        // Méthode 2: Oculus/Meta native API (fallback)
+        #if UNITY_ANDROID && !UNITY_EDITOR
+        if (!vibrationSent)
+        {
+            try
+            {
+                OculusHapticFeedback oculusHaptic = GetComponent<OculusHapticFeedback>();
+                if (oculusHaptic != null)
+                {
+                    oculusHaptic.TriggerHaptic(intensity, duration);
+                    vibrationSent = true;
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"⚠️ Oculus haptic fallback failed: {e.Message}");
+            }
+        }
+        #endif
+        
+        // Méthode 3: XR Interaction Toolkit (autre fallback)
+        if (!vibrationSent)
+        {
+            var xriController = GetComponentInParent<UnityEngine.XR.Interaction.Toolkit.ActionBasedController>();
+            if (xriController != null)
+            {
+                xriController.SendHapticImpulse(intensity, duration);
+                vibrationSent = true;
+                Debug.Log($"📳 [XRI] Vibration {handSide}: {intensity:F2} / {duration:F2}s");
+            }
+        }
+        
+        if (!vibrationSent)
+        {
+            Debug.LogError($"❌ Aucune méthode de vibration n'a fonctionné pour {handSide}!");
+            // Réessayer de trouver le device
+            InitializeXRDevice();
+        }
     }
     
     // Gizmo pour visualiser le collider en mode Scene

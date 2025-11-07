@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
@@ -10,8 +11,14 @@ public class GameManager : MonoBehaviour
     public int obstaclesHit = 0;
     
     [Header("UI References")]
-    [Tooltip("Text component pour afficher le score")]
+    [Tooltip("Text component pour afficher le score (UI Text classique)")]
     public Text scoreText;
+    
+    [Tooltip("TextMeshPro component pour afficher le score (recommandé)")]
+    public TextMeshProUGUI scoreTextTMP;
+    
+    [Tooltip("Ou TextMeshPro 3D dans le monde")]
+    public TextMeshPro scoreText3D;
     
     [Header("Stats")]
     public float accuracy = 0f; // Pourcentage de précision
@@ -19,6 +26,7 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         UpdateScoreUI();
+        Debug.Log("🎮 GameManager démarré - Score UI initialisé");
     }
     
     public void AddScore(int points)
@@ -55,9 +63,24 @@ public class GameManager : MonoBehaviour
     
     void UpdateScoreUI()
     {
+        string scoreDisplay = $"SCORE: {score}";
+        
+        // Support pour UI Text classique
         if (scoreText != null)
         {
-            scoreText.text = $"Score: {score}";
+            scoreText.text = scoreDisplay;
+        }
+        
+        // Support pour TextMeshPro UI
+        if (scoreTextTMP != null)
+        {
+            scoreTextTMP.text = scoreDisplay;
+        }
+        
+        // Support pour TextMeshPro 3D (dans le monde VR)
+        if (scoreText3D != null)
+        {
+            scoreText3D.text = scoreDisplay;
         }
     }
     
