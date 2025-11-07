@@ -12,8 +12,6 @@ VR_boxing is an immersive first-person VR boxing experience featuring real-time 
 ### Key Features
 
 - **Immersive VR Boxing** - Full head and hand tracking with natural punch detection
-- **Real-time Feedback** - Hit effects, scoring system, and audio/visual cues
-- **Custom Shaders** - Hand-crafted visual effects using ShaderLab/HLSL
 - **Cross-Platform Support** - OpenXR compatibility for multiple VR headsets
 - **Haptic Feedback** - Controller vibration on successful hits (not implemented yet)
 
